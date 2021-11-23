@@ -74,8 +74,8 @@ class Car:
         rotated_vertices = self.get_rotated_points(vertices)
 
         tyres = [
-            [x + 20, y + RADIUS],
-            [x + 50, y + RADIUS],
+            [x + 10, y + RADIUS],
+            [x + 60, y + RADIUS],
         ]
 
         rotated_tyres = self.get_rotated_points(tyres)
@@ -149,7 +149,7 @@ def main():
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE)
     glutInitWindowSize(1000, 1000)
     glutInitWindowPosition(0, 0)
-    glutCreateWindow("Car ")
+    glutCreateWindow("Car")
     glutDisplayFunc(car.display)
     glutKeyboardFunc(car.controls)
     glutTimerFunc(0, car.update, 0)
