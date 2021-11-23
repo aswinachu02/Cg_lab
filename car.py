@@ -1,107 +1,161 @@
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-
-import math
+from math import tan, cos, pi, sin, radians
 import sys
-import random
+import playsound
+
+WINDOW_SIZE = 200
+RADIUS = 7
+OFFSET = 0
 
 def init():
-    glClearColor(0.0, 0.0, 0.0, 0.0)
-    gluOrtho2D(-200.0, 200.0, -200.0, 200.0)
+    glClearColor(0, 0, 0, 1)
+    gluOrtho2D(-WINDOW_SIZE, WINDOW_SIZE, -WINDOW_SIZE, WINDOW_SIZE)
 
-
-def glutFunct():
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB)
-    glutInitWindowSize(500, 500)
-    glutInitWindowPosition(0, 0)
-    glutCreateWindow("Car")
-    init()
-
-
-def polarCircle(r, xc, yc):
-
-    xPoints = []
-    yPoints = []
-    pi = math.pi
-
-    for i in range(45):
-        x = r * math.cos(pi/180*i)
-        y = r * math.sin(pi/180*i)
-
-        xPoints = xPoints + [x+xc, -x+xc, y +
-                             xc, -y+xc, -y+xc, y+xc, -x+xc, x+xc]
-        yPoints = yPoints + [y+yc, -y+yc, x +
-                             yc, -x+yc, x+yc, -x+yc, y+yc, -y+yc]
-
-
-    points = list(list())
-    for i in range(len(xPoints)):
-        points += [[xPoints[i], yPoints[i]]]
-
-    return points
-
+def draw_circle(x, y):
+    global OFFSET
+    glBegin(GL_TRIANGLE_FAN)
+    for i in range(361):
+        # glColor3f(cos(i), 0, cos(i))
+        if i < 180:
+            glColor3f(1, 0, 0)
+        else:
+            glColor3f(0, 1, 0)
+        glVertex2f(RADIUS * cos(OFFSET + pi * i / 180) + x, RADIUS * sin(OFFSET + pi * i / 180) + y)
+    glEnd()
 
 class Car:
-    def __init__(self, point):
-        self.refPoint = point       
-        self.length = 100
-        self.height = 75
-        self.radius = self.length * 0.1
+    def __init__(self):
+        self.speed = 1
+        self.angle = float(input("Enter the angle of inclination: "))
+        self.x1, self.y1 = -WINDOW_SIZE, -WINDOW_SIZE * tan(radians(self.angle))
+        self.x2, self.y2 = WINDOW_SIZE, WINDOW_SIZE * tan(radians(self.angle))
+        self.x = self.y = 0
+        if self.angle > 0:
+            self.to_right = False
+        else:
+            self.to_right = True
+        self.start_point = [0, 0]
 
-    def drawCar(self):
+    # Function to calculate the rotated points
+    def get_rotated_points(self, vertices):
+        points = []
+        for x, y in vertices:
+            points.append([round(x * cos(radians(self.angle)) - y * sin(radians(self.angle))), round(x * sin(radians(self.angle)) + y * cos(radians(self.angle)))])        
+        return points
 
-        vertices = [
-            [self.refPoint[0], self.refPoint[1]],
-            [self.refPoint[0], self.refPoint[1] + self.height],
-            [self.refPoint[0] + self.length*0.9, self.refPoint[1] + self.height],
-            [self.refPoint[0] + self.length, self.refPoint[1] + self.height * 0.50],
-            [self.refPoint[0] + self.length, self.refPoint[1]]
-        ]
+    def draw_car(self, x, y):
+        # x *= cos(radians(self.angle))
+        # y *= sin(radians(self.angle))
+        if self.to_right:
+            vertices = [
+                [x, y + RADIUS],
+                [x, y + 10 + RADIUS],
+                [x + 10 , y + 10 + RADIUS],
+                [x + 20 , y + 20 + RADIUS],
+                [x + 40 , y + 20 + RADIUS],
+                [x + 50 , y + 10 + RADIUS],
+                [x + 60 , y + 10 + RADIUS],
+                [x + 70 , y + RADIUS],
+            ]
+        else:
+            vertices = [
+                [x, y + RADIUS],
+                [x + 10, y + 10 + RADIUS],
+                [x + 30 , y + 10 + RADIUS],
+                [x + 30 , y + 20 + RADIUS],
+                [x + 50 , y + 20 + RADIUS],
+                [x + 60 , y + 10 + RADIUS],
+                [x + 70 , y + 10 + RADIUS],
+                [x + 70 , y + RADIUS],
+            ]
+
+        rotated_vertices = self.get_rotated_points(vertices)
 
         tyres = [
-            [self.refPoint[0] + self.length * 0.20, self.refPoint[1]],
-            [self.refPoint[0] + self.length * 0.80, self.refPoint[1]]
+            [x + 20, y + RADIUS],
+            [x + 50, y + RADIUS],
         ]
 
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLineWidth(2.0)
-        
-        
+        rotated_tyres = self.get_rotated_points(tyres)
+
+        glLineWidth(2)
         glBegin(GL_POLYGON)
-
-        for i in vertices:
-            glColor3f(1, 0, 0)
-            glVertex2fv(i)
-
+        for vertex in rotated_vertices:
+            glVertex2fv(vertex)
         glEnd()
 
+        for tyre in rotated_tyres:
+            draw_circle(tyre[0], tyre[1])
+
+
+    def create_line(self):
+        glClear(GL_COLOR_BUFFER_BIT)
+        glColor3f(1, 1, 1)
+        glLineWidth(5)
         glBegin(GL_LINES)
-
-        for i in tyres:
-            points = polarCircle(self.radius, i[0], i[1])
-            for p in points:
-                glColor3f(1, 1, 1)
-                glVertex2fv(p)
-
+        glVertex2f(self.x1, self.y1)
+        glVertex2f(self.x2, self.y2)
         glEnd()
 
+    def display(self):
+        x = (self.start_point[0] * cos(radians(self.angle)) - self.start_point[1] * sin(radians(self.angle)))
+        y = (self.start_point[0] * sin(radians(self.angle)) + self.start_point[1] * cos(radians(self.angle)))
+        self.create_line()
+        self.draw_car(x, y)
         glutSwapBuffers()
 
     def update(self, value):
-        self.refPoint[0] += 1
+        global OFFSET
+        x = self.start_point[0]
+        y = self.start_point[1]
+        if self.to_right:
+            OFFSET -= 0.05 * self.speed
+            x += self.speed * cos(radians(-self.angle))
+            y += self.speed * sin(radians(-self.angle))
+        else:
+            OFFSET += 0.05 * self.speed
+            x -= self.speed * cos(radians(-self.angle))
+            y -= self.speed * sin(radians(-self.angle))
+        if x > WINDOW_SIZE - 60:
+            self.to_right = False
+        elif x < -WINDOW_SIZE:
+            self.to_right = True
+        self.start_point[0] = x
+        self.start_point[1] = y
         glutPostRedisplay()
-        glutTimerFunc(int(100/60), self.update, (0))
+        glutTimerFunc(int(1000/60), self.update, 0)
+
+    def controls(self, key, x, y):
+        if key == b"d":
+            self.to_right = True
+        elif key == b"a":
+            self.to_right = False
+        elif key == b"w":
+            self.speed += 1
+        elif key == b"s":
+            self.speed -= 1
+            if self.speed < 0:
+                self.speed = 0 
+        elif key == b"h":
+            playsound.playsound("/home/aswin/Visual Code Documents/Pyopengl/Test/assets/horn.mp3", block=False)
 
 
 def main():
-    car = Car([-100, -50])
-    glutFunct()
-    glutDisplayFunc(car.drawCar)
+    car = Car()
+    print("Creating window...")
+    glutInit(sys.argv)
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE)
+    glutInitWindowSize(1000, 1000)
+    glutInitWindowPosition(0, 0)
+    glutCreateWindow("Car ")
+    glutDisplayFunc(car.display)
+    glutKeyboardFunc(car.controls)
     glutTimerFunc(0, car.update, 0)
-    glutIdleFunc(car.drawCar)
+    glutIdleFunc(car.display)
+    init()
     glutMainLoop()
 
-
-main()
+if __name__ == "__main__":
+    main()
