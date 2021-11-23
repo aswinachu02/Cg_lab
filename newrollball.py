@@ -76,7 +76,7 @@ def main():
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE)
     glutInitWindowSize(WINDOW_SIZE, WINDOW_SIZE)
     glutInitWindowPosition(0, 0)
-    glutCreateWindow("Ball Rolling | Abhinav Rajesh")
+    glutCreateWindow("Ball Rolling ")
     glutDisplayFunc(display)
     glutTimerFunc(0, update, 0)
     glutIdleFunc(display)
